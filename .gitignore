@@ -1,0 +1,49 @@
+# Node
+node_modules/
+
+# Build output
+.next/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+
+# Env files
+.env*
+.env.local
+
+# Editor
+.vscode/
+.idea/
+
+# Misc
+*.local
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Static files
+public/*.png
+public/*.jpg
+public/*.svg
+
+# Others
+*.swp
+*.swo
+
+# Mac
+Thumbs.db
+
+# Optional: Uncomment if using Docker
+# docker-compose.yml
+# Dockerfile
