@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: PointsHookFactory
-    network: sepolia
+    network: base-sepolia
     source:
       address: "0x5aEf8763ae81686382243e10e1376a353754A2a9"
       abi: PointsHookFactory
-      startBlock: 0
+      startBlock: 31134390
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -24,3 +24,26 @@ dataSources:
         - event: PoolCreated(indexed address,indexed address,indexed uint24,address,address)
           handler: handlePoolCreated
       file: ./src/points-hook-factory.ts
+  - kind: ethereum
+    name: PointsHook
+    network: base-sepolia
+    source:
+      address: "0xC0E19b42894996d2ADB05aB148e764343a6280C8"
+      abi: PointsHook
+      startBlock: 30962894
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - SwapExecuted
+        - LiquidityAdded
+      abis:
+        - name: PointsHook
+          file: ./abis/PointsHook.json
+      eventHandlers:
+        - event: SwapExecuted(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleSwapExecuted
+        - event: LiquidityAdded(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleLiquidityAdded
+      file: ./src/points-hook.ts
