@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAppKit } from "@reown/appkit/react"
 import { useAppKitAccount, useAppKitNetworkCore } from "@reown/appkit-controllers/react"
-// Removed wagmi hooks, using only Reown AppKit
+import { useHooksByDeployer } from "@/contracts/hooks"
 import { Wallet, ChevronDown } from "lucide-react"
 
 export function Navbar() {
@@ -12,6 +12,9 @@ export function Navbar() {
   const { address, isConnected } = useAppKitAccount()
   const { caipNetwork } = useAppKitNetworkCore()
   const displayAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ""
+  
+  // Get user's deployed hooks
+  const { data: userHooks } = useHooksByDeployer(address as `0x${string}` | undefined)
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">

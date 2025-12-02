@@ -9,7 +9,7 @@ interface PoolCardProps {
   tokenSymbol: string
   address: string
   participants: number
-  totalPoints: number
+  totalPoints: string | number
   lotteryPrize: string
 }
 
@@ -36,7 +36,7 @@ export function PoolCard({ tokenName, tokenSymbol, address, participants, totalP
       <div className="space-y-3 mb-4">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Total Points</span>
-          <span className="font-medium">{totalPoints.toLocaleString()}</span>
+          <span className="font-medium">{typeof totalPoints === 'string' ? Number(totalPoints).toLocaleString() : totalPoints.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Lottery Prize</span>
@@ -46,7 +46,7 @@ export function PoolCard({ tokenName, tokenSymbol, address, participants, totalP
 
       <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded block mb-4">{short}</code>
 
-      <Button className="w-full bg-gradient-to-r from-primary to-accent" onClick={handleViewDetails}>
+      <Button className="w-full bg-linear-to-r from-primary to-accent" onClick={handleViewDetails}>
         View Details
       </Button>
     </div>

@@ -1,69 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { PoolCard } from "@/components/pool-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useHookCount } from "@/contracts/hooks"
+import { useAccount } from "wagmi"
+import { useRealHookData } from "@/hooks/useRealHookData"
+import { Loader2 } from "lucide-react"
 
 export default function ExplorePage() {
+  const { isConnected } = useAccount()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedNetwork, setSelectedNetwork] = useState("all")
+  
+  // Get total number of deployed hooks
+  const { data: hookCount, isLoading: hookCountLoading } = useHookCount()
+  
+  // Get real hook data for the first several hooks
+  const hook0 = useRealHookData(0)
+  const hook1 = useRealHookData(1)
+  const hook2 = useRealHookData(2)
+  const hook3 = useRealHookData(3)
+  const hook4 = useRealHookData(4)
+  const hook5 = useRealHookData(5)
+  
+  // Combine all hooks, filtering out loading/error states
+  const allHooks = useMemo(() => {
+    const hooks = [hook0, hook1, hook2, hook3, hook4, hook5]
+    return hooks.filter(hook => !hook.isLoading && !hook.error && hook.address)
+  }, [hook0, hook1, hook2, hook3, hook4, hook5])
 
-  const mockHooks = [
-    {
-      tokenName: "Uniswap",
-      tokenSymbol: "UNI",
-      address: "0x1111111111111111111111111111111111111111",
-      participants: 2843,
-      totalPoints: 890000,
-      lotteryPrize: "5.2",
-    },
-    {
-      tokenName: "Aave",
-      tokenSymbol: "AAVE",
-      address: "0x2222222222222222222222222222222222222222",
-      participants: 1620,
-      totalPoints: 540000,
-      lotteryPrize: "3.1",
-    },
-    {
-      tokenName: "Curve",
-      tokenSymbol: "CRV",
-      address: "0x3333333333333333333333333333333333333333",
-      participants: 1205,
-      totalPoints: 420000,
-      lotteryPrize: "2.4",
-    },
-    {
-      tokenName: "Lido",
-      tokenSymbol: "LDO",
-      address: "0x4444444444444444444444444444444444444444",
-      participants: 980,
-      totalPoints: 350000,
-      lotteryPrize: "1.8",
-    },
-    {
-      tokenName: "MakerDAO",
-      tokenSymbol: "MKR",
-      address: "0x5555555555555555555555555555555555555555",
-      participants: 745,
-      totalPoints: 280000,
-      lotteryPrize: "1.5",
-    },
-    {
-      tokenName: "Compound",
-      tokenSymbol: "COMP",
-      address: "0x6666666666666666666666666666666666666666",
-      participants: 623,
-      totalPoints: 210000,
-      lotteryPrize: "1.2",
-    },
-  ]
-
-  const filteredHooks = mockHooks.filter(
+  const filteredHooks = allHooks.filter(
     (hook) =>
       hook.tokenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       hook.tokenSymbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,39 +99,70 @@ export default function ExplorePage() {
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-4 mb-12">
           <Card className="bg-card border-border p-6 text-center">
-            <div className="text-3xl font-bold text-accent mb-1">{mockHooks.length}</div>
-            <div className="text-sm text-muted-foreground">Active Hooks</div>
+            <div className="text-3xl font-bold text-accent mb-1">
+              {hookCountLoading ? "..." : (hookCount?.toString() || "0")}
+            </div>
+            <div className="text-sm text-muted-foreground">Deployed Hooks</div>
           </Card>
           <Card className="bg-card border-border p-6 text-center">
             <div className="text-3xl font-bold text-accent mb-1">
-              {mockHooks.reduce((acc, h) => acc + h.participants, 0).toLocaleString()}
+              {allHooks.reduce((acc, h) => acc + h.participants, 0).toLocaleString()}
             </div>
             <div className="text-sm text-muted-foreground">Total Participants</div>
           </Card>
           <Card className="bg-card border-border p-6 text-center">
             <div className="text-3xl font-bold text-accent mb-1">
-              ${mockHooks.reduce((acc, h) => acc + Number.parseFloat(h.lotteryPrize), 0).toFixed(1)}M
+              {allHooks.reduce((acc, h) => acc + Number.parseFloat(h.lotteryPrize), 0).toFixed(4)} ETH
             </div>
             <div className="text-sm text-muted-foreground">Total Prize Pool</div>
           </Card>
         </div>
 
-        {/* Hooks Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredHooks.map((hook) => (
-            <PoolCard
-              key={hook.address}
-              tokenName={hook.tokenName}
-              tokenSymbol={hook.tokenSymbol}
-              address={hook.address}
-              participants={hook.participants}
-              totalPoints={hook.totalPoints}
-              lotteryPrize={hook.lotteryPrize}
-            />
-          ))}
-        </div>
+        {/* Loading State */}
+        {hookCountLoading && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="bg-card border-border p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded"></div>
+                    <div className="h-4 bg-muted rounded"></div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {filteredHooks.length === 0 && (
+        {/* Hooks Grid */}
+        {!hookCountLoading && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredHooks.map((hook) => (
+              <PoolCard
+                key={hook.address}
+                tokenName={hook.tokenName}
+                tokenSymbol={hook.tokenSymbol}
+                address={hook.address}
+                participants={hook.participants}
+                totalPoints={hook.totalPoints}
+                lotteryPrize={hook.lotteryPrize}
+              />
+            ))}
+          </div>
+        )}
+
+        {!hookCountLoading && filteredHooks.length === 0 && allHooks.length === 0 && (
+          <Card className="bg-card border-border p-12 text-center">
+            <p className="text-muted-foreground mb-4">No hooks deployed yet</p>
+            <Button onClick={() => window.location.href = '/deploy'}>
+              Deploy First Hook
+            </Button>
+          </Card>
+        )}
+
+        {!hookCountLoading && filteredHooks.length === 0 && allHooks.length > 0 && (
           <Card className="bg-card border-border p-12 text-center">
             <p className="text-muted-foreground mb-4">No hooks found matching your search</p>
             <Button variant="outline" onClick={() => setSearchTerm("")}>

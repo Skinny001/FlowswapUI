@@ -10,20 +10,60 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAccount } from "wagmi"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, ExternalLink } from "lucide-react"
+import { formatEther } from "viem"
+import { 
+  useComputeHookAddress, 
+  useFactoryWrite, 
+  useTokenInfo,
+  usePlatformFee 
+} from "@/contracts/hooks"
+import { FACTORY_ABI } from "@/contracts/config"
 
 export default function DeployPage() {
-  const { isConnected } = useAccount()
+  const { address, isConnected } = useAccount()
   const [step, setStep] = useState(1)
+  const [deploymentSalt, setDeploymentSalt] = useState<`0x${string}`>()
+  const [isDeploying, setIsDeploying] = useState(false)
+  const [deployedHookAddress, setDeployedHookAddress] = useState<`0x${string}`>()
   const [formData, setFormData] = useState({
     tokenAddress: "",
     pointsRatio: "",
     metadataUri: "",
-    feePercentage: "",
+    feePercentage: "5",
     lotteryThreshold: "",
     vrfSubscriptionId: "",
-    keyHash: "",
+    keyHash: "0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef",
   })
+
+  // Contract hooks
+  const { writeContractAsync: writeFactory } = useFactoryWrite()
+  const { data: platformFee } = usePlatformFee()
+
+  // Token validation
+  const tokenInfo = useTokenInfo(
+    formData.tokenAddress && formData.tokenAddress.startsWith('0x') && formData.tokenAddress.length === 42
+      ? formData.tokenAddress as `0x${string}`
+      : undefined
+  )
+
+  // Generate a random salt on component mount
+  useEffect(() => {
+    if (!deploymentSalt) {
+      const randomSalt = `0x${Array.from({ length: 64 }, () => 
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('')}` as `0x${string}`
+      setDeploymentSalt(randomSalt)
+    }
+  }, [deploymentSalt])
+
+  // Compute hook address
+  const { data: computedHookAddress } = useComputeHookAddress(
+    formData.tokenAddress as `0x${string}`,
+    formData.pointsRatio ? BigInt(formData.pointsRatio) : undefined,
+    formData.metadataUri,
+    deploymentSalt
+  )
 
   useEffect(() => {
     if (!isConnected) {
@@ -34,6 +74,36 @@ export default function DeployPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleDeploy = async () => {
+    if (!isConnected || !deploymentSalt || !computedHookAddress) return
+
+    try {
+      setIsDeploying(true)
+
+      const txHash = await writeFactory({
+        abi: FACTORY_ABI,
+        address: process.env.NEXT_PUBLIC_FACTORY_ADDRESS as `0x${string}`,
+        functionName: 'createPointsSystem',
+        args: [
+          formData.tokenAddress as `0x${string}`,
+          BigInt(formData.pointsRatio),
+          formData.metadataUri,
+          deploymentSalt,
+          computedHookAddress
+        ]
+      })
+
+      // Wait for transaction confirmation
+      console.log('Transaction hash:', txHash)
+      setDeployedHookAddress(computedHookAddress)
+      
+    } catch (error) {
+      console.error('Deployment failed:', error)
+    } finally {
+      setIsDeploying(false)
+    }
   }
 
   const steps = [
@@ -103,7 +173,7 @@ export default function DeployPage() {
                 <p className="text-xs text-muted-foreground mt-2">Must be a valid ERC20 contract</p>
               </div>
 
-              {formData.tokenAddress && (
+              {formData.tokenAddress && tokenInfo.name.data && (
                 <div className="bg-muted/50 border border-border rounded-lg p-4">
                   <p className="text-sm font-medium mb-3 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -112,20 +182,40 @@ export default function DeployPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-muted-foreground">Name</p>
-                      <p className="font-medium">Uniswap</p>
+                      <p className="font-medium">{tokenInfo.name.data || "Loading..."}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Symbol</p>
-                      <p className="font-medium">UNI</p>
+                      <p className="font-medium">{tokenInfo.symbol.data || "Loading..."}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Decimals</p>
-                      <p className="font-medium">18</p>
+                      <p className="font-medium">{tokenInfo.decimals.data?.toString() || "Loading..."}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Supply</p>
-                      <p className="font-medium">1.0B</p>
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="font-mono text-xs">{formData.tokenAddress.slice(0, 10)}...</p>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {formData.tokenAddress && tokenInfo.name.isError && (
+                <Alert className="border-red-500/50 bg-red-500/10">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-700">
+                    Invalid token address. Please verify the contract address.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {computedHookAddress && (
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+                  <p className="text-sm font-medium mb-3">Predicted Hook Address</p>
+                  <div className="flex items-center gap-2">
+                    <code className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                      {computedHookAddress}
+                    </code>
                   </div>
                 </div>
               )}
@@ -296,7 +386,7 @@ export default function DeployPage() {
           </Card>
         )}
 
-        {step === 4 && (
+        {step === 4 && !deployedHookAddress && (
           <div className="space-y-6">
             <Card className="bg-card border-border p-8">
               <h2 className="text-2xl font-bold mb-6">Review Configuration</h2>
@@ -321,17 +411,39 @@ export default function DeployPage() {
               </div>
 
               <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6">
-                <p className="text-sm font-medium mb-2">Estimated Gas Cost</p>
-                <p className="text-2xl font-bold text-accent">0.0045 ETH</p>
-                <p className="text-xs text-muted-foreground mt-1">Current gas price: 45 Gwei</p>
+                <p className="text-sm font-medium mb-2">Platform Fee</p>
+                <p className="text-2xl font-bold text-accent">
+                  {platformFee ? `${platformFee}%` : "Loading..."}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Fee charged by FlowSwap protocol</p>
               </div>
 
+              {computedHookAddress && (
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 mb-6">
+                  <p className="text-sm font-medium mb-2">Hook Address (CREATE2)</p>
+                  <code className="font-mono text-xs bg-muted px-2 py-1 rounded block">
+                    {computedHookAddress}
+                  </code>
+                </div>
+              )}
+
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(3)} className="flex-1" disabled={!isConnected}>
+                <Button variant="outline" onClick={() => setStep(3)} className="flex-1" disabled={!isConnected || isDeploying}>
                   Back
                 </Button>
-                <Button className="bg-linear-to-r from-primary to-accent flex-1" disabled={!isConnected}>
-                  Deploy Hook
+                <Button 
+                  className="bg-linear-to-r from-primary to-accent flex-1" 
+                  disabled={!isConnected || isDeploying || !computedHookAddress}
+                  onClick={handleDeploy}
+                >
+                  {isDeploying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deploying...
+                    </>
+                  ) : (
+                    "Deploy Hook"
+                  )}
                 </Button>
               </div>
             </Card>
@@ -350,6 +462,80 @@ export default function DeployPage() {
                 <li className="flex gap-2">
                   <span className="text-accent">✓</span>
                   <span>Monitor points distribution and earnings</span>
+                </li>
+              </ul>
+            </Card>
+          </div>
+        )}
+
+        {deployedHookAddress && (
+          <div className="space-y-6">
+            <Card className="bg-green-500/10 border border-green-500/20 p-8 text-center">
+              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-4">Hook Deployed Successfully! 🎉</h2>
+              
+              <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6">
+                <p className="text-sm font-medium mb-2">Your Hook Address</p>
+                <div className="flex items-center gap-2 justify-center">
+                  <code className="font-mono text-sm bg-muted px-3 py-2 rounded">
+                    {deployedHookAddress}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigator.clipboard.writeText(deployedHookAddress)}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Token</p>
+                  <p className="font-medium">{tokenInfo.symbol.data}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Points Ratio</p>
+                  <p className="font-medium">{formData.pointsRatio}:1</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.open(`https://sepolia.basescan.org/address/${deployedHookAddress}`, '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View on BaseScan
+                </Button>
+                <Button
+                  className="bg-linear-to-r from-primary to-accent flex-1"
+                  onClick={() => {
+                    // Navigate to hook dashboard
+                    window.location.href = `/hooks/${deployedHookAddress}`
+                  }}
+                >
+                  View Dashboard
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="bg-accent/10 border border-accent/20 p-6">
+              <h3 className="font-bold mb-3">📋 Next Steps</h3>
+              <ul className="space-y-2 text-sm">
+                <li className="flex gap-2">
+                  <span className="text-accent">✓</span>
+                  <span>Hook is now active on Uniswap V4</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-accent">✓</span>
+                  <span>Users can start earning points by swapping {tokenInfo.symbol.data}</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-accent">✓</span>
+                  <span>Monitor activity and rewards on your dashboard</span>
                 </li>
               </ul>
             </Card>
