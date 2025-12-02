@@ -4,6 +4,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { ActivityFeed } from "@/components/activity-feed"
+import { PoolsList } from "@/components/pools-list"
 import Link from "next/link"
 import { ArrowRight, Zap, Target, Users, TrendingUp, Lock, Gauge } from "lucide-react"
 
@@ -18,7 +20,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div>
               <h1 className="text-5xl md:text-6xl font-bold mb-6 text-balance">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary">
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-primary via-accent to-primary">
                   Incentivize Swaps
                 </span>
                 <br />
@@ -32,7 +34,7 @@ export default function Landing() {
                 <Link href="/deploy">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent hover:shadow-lg"
+                    className="w-full sm:w-auto bg-linear-to-r from-primary to-accent hover:shadow-lg"
                   >
                     Deploy Hook
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -91,6 +93,21 @@ export default function Landing() {
               <div className="text-sm text-muted-foreground">Uptime</div>
             </Card>
           </div>
+
+          {/* Live Activity Section */}
+          <div className="grid md:grid-cols-2 gap-8 mb-20">
+            <Card className="bg-card border-border p-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Live Activity
+              </h3>
+              <ActivityFeed useSubgraphData={true} />
+            </Card>
+            <Card className="bg-card border-border p-6">
+              <h3 className="text-xl font-bold mb-4">Recent Pools</h3>
+              <PoolsList limit={3} />
+            </Card>
+          </div>
         </section>
 
         {/* How It Works Section */}
@@ -106,7 +123,7 @@ export default function Landing() {
             <div className="grid md:grid-cols-3 gap-8">
               {/* Step 1 */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-linear-to-r from-primary to-accent flex items-center justify-center mb-4">
                   <span className="text-2xl font-bold text-white">1</span>
                 </div>
                 <h3 className="text-xl font-bold mb-3">Deploy Your Hook</h3>
@@ -122,7 +139,7 @@ export default function Landing() {
 
               {/* Step 2 */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-linear-to-r from-primary to-accent flex items-center justify-center mb-4">
                   <span className="text-2xl font-bold text-white">2</span>
                 </div>
                 <h3 className="text-xl font-bold mb-3">Users Earn Points</h3>
@@ -138,7 +155,7 @@ export default function Landing() {
 
               {/* Step 3 */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-linear-to-r from-primary to-accent flex items-center justify-center mb-4">
                   <span className="text-2xl font-bold text-white">3</span>
                 </div>
                 <h3 className="text-xl font-bold mb-3">Trigger Lotteries</h3>
@@ -237,14 +254,14 @@ export default function Landing() {
 
         {/* CTA Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-border p-12 text-center">
+          <Card className="bg-linear-to-r from-primary/10 to-accent/10 border-border p-12 text-center">
             <h2 className="text-4xl font-bold mb-4">Ready to Launch Your Incentive System?</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto text-lg">
               Deploy in minutes. No coding required. Full control over points ratios, fees, and lottery parameters.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/deploy">
-                <Button size="lg" className="bg-gradient-to-r from-primary to-accent">
+                <Button size="lg" className="bg-linear-to-r from-primary to-accent">
                   Start Deploying Now
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { AnalyticsWrapper } from "@/components/analytics-wrapper"
 import { headers } from "next/headers"
 import "./globals.css"
 import ContextProvider from "@/context"
@@ -33,7 +33,7 @@ export default async function RootLayout({
     <html lang="en" className="dark">
       <body className={`font-sans antialiased`}>
         <ContextProvider cookies={cookies}>{children}</ContextProvider>
-        <Analytics />
+        <AnalyticsWrapper />
       </body>
     </html>
   )

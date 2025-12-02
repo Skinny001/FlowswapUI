@@ -6,6 +6,8 @@ import { createAppKit } from "@reown/appkit/react"
 import { baseSepolia } from "@reown/appkit/networks"
 import type { ReactNode } from "react"
 import { cookieToInitialState, WagmiProvider, type Config } from "wagmi"
+import { Provider as UrqlProvider } from 'urql'
+import { graphqlClient } from '@/lib/graphql-client'
 
 // Set up queryClient
 const queryClient = new QueryClient()
@@ -28,7 +30,7 @@ const modal = createAppKit({
   defaultNetwork: baseSepolia,
   metadata: metadata,
   features: {
-    analytics: true,
+    analytics: false, // Disabled to prevent ad blocker issues
   },
 })
 
@@ -43,7 +45,11 @@ function ContextProvider({
 
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <UrqlProvider value={graphqlClient}>
+          {children}
+        </UrqlProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   )
 }
