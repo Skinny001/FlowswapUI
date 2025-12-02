@@ -1,0 +1,8 @@
+{
+  "sepolia": {
+    "PointsHookFactory": {
+      "address": "0x5aEf8763ae81686382243e10e1376a353754A2a9",
+      "startBlock": 0
+    }
+  }
+}
